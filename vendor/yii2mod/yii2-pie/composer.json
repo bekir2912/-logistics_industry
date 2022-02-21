@@ -1,0 +1,22 @@
+{
+    "name": "yii2mod/yii2-pie",
+    "description": "Pie generator using d3pie.js",
+    "type": "yii2-extension",
+    "keywords": ["yii2","piejs"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dmitry Semenov",
+            "email": "disemx@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*",
+        "bower-asset/d3pie": "0.1.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "yii2mod\\pie\\": ""
+        }
+    }
+}

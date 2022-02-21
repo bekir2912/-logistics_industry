@@ -1,0 +1,531 @@
+$(function(){
+/*	$(document).on('hidden.bs.modal', function (e) {
+		$(e.target).data('bs.modal', null);
+		//$(e.target).remove();
+	});*/
+	
+	bindModalEvents();
+	bindCorreosTracking();
+	bindFormValidation();
+	bindShippingAddressFormEvents();
+	bindOrderListScrollLoad();
+	bindPasswordChange();
+	bindEmailChange();
+	bindCustomizationRequest();
+});
+function bindCustomizationRequest() {
+	$(document).on("click", ".btn-order-detail-save-customization", function() {
+		
+		
+		
+		var customizationFieldKey = $(this).data("customizationfieldkey");
+		
+		var formData = {};
+		formData.customizationid = $(this).data("customizationid");
+		formData.orderid = $(this).data("orderid");
+		formData.lineno = $(this).data("lineno");
+		formData.screen = "customerzone";
+		
+		var callback = function() {
+			//$(".btn-order-detail[href='/customerzone/orderdetail?orderid=" + formData.orderid + "']").trigger("click");
+		}
+		
+		submitCustomization(formData, $(this).data("customizationtype"), $(this).data("customizationfieldkey"), callback);
+		
+	});
+	
+	$(document).on("click", ".btn-order-detail-customization-upload", function() {
+		var customizationId = $(this).data("customizationid");
+		var orderId = $(this).data("orderid");
+		var lineNo = $(this).data("lineno");
+		var customizationFieldKey = $(this).data("customizationfieldkey");
+		
+		var url = "/customerzone/customizationuploadmodal";
+		url += "?screen=customerzone&customizationid=" + customizationId + "&orderid=" + orderId + "&lineno=" + lineNo;
+		
+		$.get(url, function(data,textStatus, xhr) {
+			var $modal = $(data)
+			
+			$(document).on("shown.bs.modal", $modal, function (e) {
+				bindUploadProductCustomizationToS3($modal, "customerzone")
+			});
+			$(document).on("hidden.bs.modal", $modal, function (e) {
+				$modal.remove();
+			});
+			
+			$modal.modal();
+		});
+	});
+}
+
+function bindEmailChange() {
+	$("#emailUpdateModal").on('show.bs.modal', function (e) {
+		$("#emailUpdateModalAlert").remove();
+	});
+	$(".profile-info form #accountemail").on("click", function(){
+		$("#emailUpdateModal").modal("show");
+	});
+	$(document).on("submit", "#emailUpdateModal form", function(e){
+		e.preventDefault();
+		var $form = $(this);
+		$("#emailUpdateModalAlert").remove();
+		if (!$form.validationEngine('validate')) return false;
+		var $alert = $('<div id="emailUpdateModalAlert" class="alert alert-success alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>').insertBefore($form).hide();
+		$.ajax({
+			url: "/customerzone/updateemail",
+			method: "POST",
+			data: $form.serialize()
+		}).done(function(data){
+			
+			if (data.error) {
+				$alert.addClass("alert-danger").html(data.error).show();
+			} else {
+				$alert.addClass("alert-success").html(data.message).show();
+				$("#accountemail").val($form[0].email.value);
+			}
+		}).fail(function(e){
+			console.error(e);
+		});
+	});
+}
+function bindPasswordChange() {
+	$("#passwordUpdateModal").on('show.bs.modal', function (e) {
+		$("#passwordUpdateModalAlert").remove();
+	});
+	$(document).on("submit", "#passwordUpdateModal form", function(e){
+		e.preventDefault();
+		var $form = $(this);
+		$("#passwordUpdateModalAlert").remove();
+		if (!$form.validationEngine('validate')) return false;
+		var $alert = $('<div id="passwordUpdateModalAlert" class="alert alert-success alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>').insertBefore($form).hide();
+		$.ajax({
+			url: "/customerzone/updatepassword",
+			method: "POST",
+			data: $form.serialize()
+		}).done(function(data){
+			if (data.error) {
+				$alert.addClass("alert-danger").html(data.error).show();
+			} else {
+				$alert.addClass("alert-success").html(data.message).show();
+				$form[0].reset();
+			}
+		}).fail(function(e){
+			console.error(e);
+		});
+	});
+}
+
+function bindOrderListScrollLoad() {
+	
+	var $listContainer = $(".list-scroll-load");
+	var urlBase = $listContainer.data("url");
+	if ($listContainer.length != 1) return;
+		
+	var currentPage = 0;
+	load();
+	$(window).scroll(function() {
+		console.log($(window).scrollTop() ,($(document).height() - $(window).height()))
+		if(Math.round($(window).scrollTop()) == $(document).height() - $(window).height()) {
+			if ($listContainer.find("[data-last-page]").length < 1) {
+				currentPage++;
+				load();
+			}
+			
+			
+		}
+	});
+	
+	function load() {
+		$.ajax({
+			url: urlBase + "?currentpage=" + currentPage,
+			method: "GET",
+		}).done(function(data){
+			var $content = $(data).appendTo($listContainer);
+		}).fail(function(e){
+			console.error(e)
+		});
+	}
+}
+
+function bindModalEvents() {
+	$(document).on('hidden.bs.modal', ".customer-zone-item-detail-modal", function (e) {
+		$(this).remove();
+	})
+	$(document).on("click", ".btn-order-detail", function(e){
+		e.preventDefault();
+		var url = this.href || this.dataset.url;
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$(".customer-zone-item-detail-modal").modal("hide");
+			$(data).appendTo("body");
+			$(".customer-zone-item-detail-modal").modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+	});
+	$(document).on("click", ".btn-return-order-detail", function(e){
+		e.preventDefault();
+		var url = this.href;
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$(".customer-zone-item-detail-modal").remove();
+			$(data).appendTo("body");
+			$(".customer-zone-item-detail-modal").modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+	});
+	$(document).on("change", "#requestReturnOrderForm [name=reason]", function(){
+		var $target = $("#returnorderReasonOtherText");
+		if ($(this).is("#returnorderReasonOther:checked")) {
+			$target.show().trigger("focus");
+		} else {
+			$target.hide();
+		}
+	});
+	$(document).on("submit", "#requestReturnOrderForm", function(){
+		var $form = $(this);
+		
+		if ($form.validationEngine("validate")) {
+			var data = {orderid: this.orderid.value};
+			if (this.reason.value == "returnorder.reason.other") {
+				data.reason =  $("#returnorderReasonOtherText").val();
+				
+			} else {
+				data.reason = this.reason.value;
+			}
+			
+			data.product = [];
+			$($(this.product)).each(function(){
+				data.product.push(this.value);
+			});
+			$.ajax({
+				url: "/customerzone/requestreturnorder",
+				method: "POST",
+				data: data
+			}).done(function(data){
+				$(data).insertBefore($form);
+				$form.hide();
+				console.log(data);
+			}).fail(function(e){
+				console.error(e)
+			});
+		}
+		
+		
+		return false;
+		
+	});
+	$(".btn-shipping-address-form-modal").on("click", function(e){
+		e.preventDefault();
+		var url = this.href;
+		var addressId = $(this).data("addressid");
+		if (addressId) {
+			url += "?addressid=" + addressId;
+		}
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$("#ShippingAddressModal").remove();
+			$(data).appendTo("body");
+			$("#ShippingAddressModal").modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+	});
+	$(".btn-delete-address").on("click", function(e){
+		e.preventDefault();
+		var url = this.href;
+		var addressId = $(this).data("addressid");
+		if (addressId) {
+			url += "?addressid=" + addressId;
+		}
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$("#deleteAddressConfirmModal").remove();
+			$(data).appendTo("body");
+			$("#deleteAddressConfirmModal").modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+	});
+	$(document).on("click", ".btn-order-return-documentation", function(e){
+		e.preventDefault();
+		var url = this.href;
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$(".customer-zone-item-detail-modal").remove();
+			$(data).appendTo("body");
+			$(".customer-zone-item-detail-modal").modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+	});
+}
+function bindCorreosTracking() {
+	$(document).on("show.bs.collapse", "#trackingStatusAccordion", function () {
+		var orderId = $(this).data("orderid");
+		if (orderId) {
+			$.ajax({
+				url: "/customerzone/shipmentracking?orderid=" + orderId,
+				method: "GET"
+			}).done(function(data){
+				if (data.events) {
+					$("#shippingEvents").html("");
+					for (var i in data.events) {
+						var event = data.events[i];
+						var text = event.title + " - " + event.date;
+						$('<li>' + text  + '</li>').prependTo("#shippingEvents");
+					}
+					var lastEvent = data.events[data.events.length-1];
+					
+					$("#lastStatusOfShipment").text(lastEvent.title);
+					
+					$(".step", "#shippingEventSteps").removeClass("step-current")
+					$(".step-" + lastEvent.phase, "#shippingEventSteps").addClass("step-current");
+					
+					$(".detail-tracking-status-accordion-content").show().siblings(".progress").remove();
+					
+				} else {
+					if (data.error)	{
+						alert(data.error);
+					}
+					$("#trackingStatusAccordion").collapse("hide");
+				}
+			}).fail(function(e){
+				console.error(e)
+			});
+		}
+		
+	});
+}
+function bindFormValidation() {
+	$("[data-toggle=validate]").validationEngine('attach');
+}
+function bindShippingAddressFormEvents() {
+	$(document).on("submit", "#ShippingAddressModal form", function(e){
+		var $form = $(this);
+		if (!$form.validationEngine('validate')) return false;
+		$("#shippingAddressModalAlert").remove();
+		var addressId = $form[0].addressid.value;
+		console.log(addressId)
+		var urlBasePath = "/customerzone";
+		
+		if (addressId) {
+			$.ajax({
+				url: urlBasePath + "/updateshippingaddress",
+				method: "POST",
+				data: $form.serialize()
+			}).done(function(data){
+				var $alert = $('<div id="shippingAddressModalAlert" class="alert alert-success alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>').insertBefore($form);
+				if (data.error) {
+					$alert.addClass("alert-danger").html(data.error);
+				} else {
+					$alert.addClass("alert-success").html(data.message);
+					
+				}
+			}).fail(function(e){
+				console.error(e)
+			});
+			$form.closest(".modal").on("hidden.bs.modal", function(){
+				location.href = "/customerzone/shippingaddresses";
+			});
+			
+			return false;
+			
+		} else {
+			this.action = urlBasePath + "/addshippingaddress";
+			
+		}
+		
+	});
+
+	$(document).on("shown.bs.modal", ".modal", function(){
+		checkCountryPhoneCode();
+	});
+	$(document).on("change", "#countrycode", function(){
+		checkCountryPhoneCode();
+	});
+	function checkCountryPhoneCode() {
+		if ($("#countrycode").val() == "ES") {
+			$("#countryphonecode option[value=34]").prop("selected", true);
+			$("#countryphonecode").prop("disabled", true);
+		} else {
+			$("#countryphonecode").prop("disabled", false);
+		}
+	}
+	checkCountryPhoneCode();
+}
+
+var ModalManager = new function() {
+	var modals = [];
+	var onHiddenHooks = {};
+	this.override = function($modal, onShowCallback) {
+		
+		$(".modal.show").each(function(i, modal){
+			modals.push($(modal)[0]);
+			var newOpacity = (parseFloat($(modal).css("opacity")) || 1) / 10;
+			$(modal).css({opacity: newOpacity});
+			
+		});
+		modals = $.unique(modals);
+		$modal.on("shown.bs.modal", onShowCallback);
+		if ($modal.closest(document.documentElement).length < 1) {
+			$modal = $modal.appendTo("body");
+		}
+		
+		$modal.modal("show");
+		
+		$modal.on("remove", function(){
+			rollback();
+		});
+		$modal.on("hidden.bs.modal", function(){
+			$modal.remove();
+			rollback();
+			callOnHiddenHooks();
+		});
+		function rollback() {
+			for (var i in modals) {
+				delete modals[i];
+			}
+			fixOpacity();
+		}
+		function fixOpacity() {
+			if ($(".modal").length == 0) {
+				return;
+			} else if ($(".modal").length == 1) {
+				$(".modal.show").css({opacity: 1});
+			} else {
+				$(".modal.show").each(function(i){
+					var o = (i + 1) / $(".modal.show").length;
+					$(this).css({opacity: o});
+				});
+			}
+			setTimeout(fixOpacity, 100);
+		}
+		function callOnHiddenHooks() {
+			for (var i in onHiddenHooks) {
+				onHiddenHooks[i]();
+			}
+		}
+		return $modal;
+	}
+	
+	this.create = function(type, title, body, onShowCallback) {
+		var modal = '<div class="modal" tabindex="-1" role="dialog">'+
+		'	<div class="modal-dialog" role="document">'+
+		'		<div class="modal-content border-0">'+
+		'			<div class="modal-header">'+
+		'				<h5 class="modal-title"><i class="fa fa-' + ("success" == type ? "check-circle" : "exclamation-triangle") + '" aria-hidden="true"></i>' +
+		'					' + title +
+		'				</h5>'+
+		'				<button type="button" class="close" data-dismiss="modal" aria-label="Close">'+
+		'					<span aria-hidden="true">&times;</span>'+
+		'				</button>'+
+		'			</div>'+
+		'			<div class="modal-body">'+
+		'				<p>' + body + '</p>'+
+		'			</div>'+
+		'		</div>'+
+		'	</div>'+
+		'</div>';
+		return this.override($(modal), onShowCallback);
+		
+	}
+	
+	this.addOnHiddenHook = function(callback) {
+		var key = generateRandomString(3,1);
+		onHiddenHooks[key] = callback;
+		return key;
+	}
+	this.removeOnHiddenHook = function(key) {
+		delete onHiddenHooks[key];
+	}
+	this.visibleModalLength = function() {
+		return $(".modal.show").length;
+	}
+}
+
+/*
+ * Show a modal toast message
+ */
+var Message = new function() {
+	
+	this.success = function(m, callback, context) {
+		return this.message("success", m, callback, context);
+	}
+	this.error = function(m, callback, context) {
+		return this.message("danger", m, callback);
+	}
+	this.warning = function(m, callback, context) {
+		return this.message("warning", m, callback);
+	}
+	var messageBody = function(type, message, isConfirm) {
+		var modal = '<div class="modal" tabindex="-1" role="dialog">'+
+		'	<div class="modal-dialog" role="document">'+
+		'		<div class="modal-content border-0">'+
+		'			<div class="modal-header border-bottom-0 bg-' + type +' text-white">'+
+		'				<h5 class="modal-title"><i class="fa fa-' + ("success" == type ? "check-circle" : "exclamation-triangle") + '" aria-hidden="true"></i>' +
+		'				</h5>'+
+		'				<button type="button" class="close" data-dismiss="modal" aria-label="Close">'+
+		'					<span aria-hidden="true">X</span>'+
+		'				</button>'+
+		'			</div>'+
+		'			<div class="modal-body">'+
+		'				<p>' + message + '</p>'+
+		'			</div>';
+		
+
+		
+		modal +=
+			'	</div>'+
+		'	</div>'+
+		'</div>';
+		return modal;
+	}
+	this.message = function(type, message, callback, context, isConfirm) {
+		var modal = messageBody(type, message, isConfirm);
+		var $modal = $(modal).appendTo("body");
+		$modal = ModalManager.override($modal);
+		
+		$(".btn-modal-confirm", $modal).on("click", function() {
+			if ("function" == typeof(callback)) {
+				callback(context);
+			} else {
+				eval(callback);
+			}
+		});
+		
+		$modal.on("hidden.bs.modal", function(){
+			$(this).remove();
+			if (!isConfirm) {
+				if ("function" == typeof(callback)) {
+					callback(context);
+				} else {
+					eval(callback);
+				}
+			}
+		});
+		
+		if (!isConfirm) {
+			setTimeout(function($modal){
+				if ($modal.length > 0)
+					$modal.modal("hide");
+			}, 6000, $modal);
+		}
+		
+	}
+	this.confirm = function(content, confirmCallback, context) {
+		return this.message("warning", content, confirmCallback, context, true);
+	}
+}
+

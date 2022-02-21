@@ -1,0 +1,355 @@
+$(document).ready(function(){
+
+	bindVariantBox();
+	//bindCookiePolicy();
+	bindLocaleSwitch();
+	bindFancyBox();
+	bindProductDiscountSelect();
+	bindFormSubmit();
+	bindNewsletterSubscription();
+	bindCookieConsent();
+	
+});
+
+function bindCookieConsent() {
+	var $iframe;
+	showConsentIframe = function(showCookiesConfigurationModal) {
+		$("#cookie-consent-iframe").remove();
+		$iframe = $('<iframe src="/cookie-consent" id="cookie-consent-iframe" style="position:fixed;width:100%;height:100%;top:0;left:0;z-index:99999" />').appendTo("body");
+		
+			window.addEventListener("message", function(event){
+				if (event.data == "consentIframeLoaded") {
+					if (showCookiesConfigurationModal) {
+						window.postMessage("showCookieConfigModal", "*");
+					}
+					if (window.location.href.indexOf("politica-de-cookies") > -1) {
+					
+							window.postMessage("hideCookieWallBackdrop", "*");
+						
+					}
+					
+				}
+			}, false);
+		
+	}
+	function receiveMessage(event) {
+		if (event.data == "removeConsentIframe" && $iframe.length > 0){
+			$iframe[0].parentNode.removeChild($iframe[0]);
+		} else if (event.data == "showConsentIframe") {
+			showConsentIframe();
+		}
+	}
+	window.addEventListener("message", receiveMessage, false);
+	if (!$.cookie("consent")) {
+		showConsentIframe();
+	}
+	
+	///////////////////////////////////////////////////////////////
+	
+}
+
+function bindFancyBox() {
+	if($.fancybox && Comandia.labelsReady()) {
+		$(".fancybox").fancybox({
+			openEffect	: 'none',
+			closeEffect	: 'none',
+			tpl: {
+				error    : '<p class="fancybox-error">' + Comandia.getLabel("requested.content.cannot.be.loaded") + '</p>',
+				closeBtn : '<a title="' + Comandia.getLabel("close") + '" class="fancybox-item fancybox-close" href="javascript:;"></a>',
+				next     : '<a title="' + Comandia.getLabel("next") + '" class="fancybox-nav fancybox-next" href="javascript:;"><span></span></a>',
+				prev     : '<a title="' + Comandia.getLabel("previous") + '" class="fancybox-nav fancybox-prev" href="javascript:;"><span></span></a>'
+			}
+		});
+	} else setTimeout("bindFancyBox()",100);
+	
+}
+
+function checkVariantSelection() {
+	//console.log("........:");
+	if($("#inexistent_variant_alert").length)
+		$("#inexistent_variant_alert").remove();
+	
+	var $inexistentVariantAlert = $('<div id="inexistent_variant_alert" style="display:inline-block;margin:10px;padding:5px 8px;background-color:#E43B48;color:#fff">'+Label.inexistent_variant+'</div>').hide(0);
+	
+	var selectedSize = "";
+	var selectedColor = "";
+	if ($('#variantsize').length > 0){
+		selectedSize = $('#variantsize').val();
+		selectedSize = selectedSize.replace('\"','\\"');
+	}
+	
+	if ($('#variantcolor').length > 0){
+		selectedColor = $('#variantcolor').val();
+		selectedColor = selectedColor.replace('\"','\\"');
+	}
+	
+	$('.shoppingcartbtn').attr('disabled','disabled');
+	$('#variantid').val('');
+	
+	var $selectedVariant = $('#variantselect option[data-size="'+selectedSize+'"][data-color="'+selectedColor+'"]');
+	
+	var variantIdVal = $selectedVariant.attr('data-variantid');
+	var variantPrice = parseFloat($selectedVariant.attr('data-price')).toFixed(2);
+	//console.log("........:",Comandia.config.shop.decimalseparator);
+	if(","===Comandia.config.shop.decimalseparator){
+		variantPrice = variantPrice.toString().replace(".",",");
+	}
+	
+	if(variantIdVal) {
+		$('.shoppingcartbtn').removeAttr('disabled');
+		$('#variantid').val(variantIdVal);
+		var $priceMain = $('#pricemain');
+		if($priceMain.size()>0) {
+			var oldPrice = $priceMain.html();
+			var res = oldPrice.split(" ");
+			var newValue='';
+			for (var i = 0, len = res.length; i < len; i++) {
+				if (i == 0) {
+					newValue += variantPrice;
+				} else {
+					newValue += ' ' + res[i];
+				}
+			}
+			$priceMain.html(newValue);
+		}
+
+		
+		if($selectedVariant.data("out-of-stock")) {
+			$('#product_instock').hide();
+			$('#product_deliverytime').show();
+		} else {
+			$('#product_instock').show();
+			$('#product_deliverytime').hide();
+		}
+		
+		// do not bind variant image, except variant selection
+		/*if(arguments.callee.caller.name!="bindVariantBox") {
+			var imageUrl = $('#variantselect > option[data-variantid="'+variantIdVal+'"]').data("imageurl");
+			try {
+				setVariantImageAsProductImage(imageUrl);
+			} catch(error){}
+		}
+		*/
+	} else {
+		$('#variantdiv').append($inexistentVariantAlert);
+		$inexistentVariantAlert.fadeIn(100).delay(10000).fadeOut(400);
+	}
+}
+
+
+
+function bindVariantBox() {
+	$("#product_deliverytime,#product_instock").hide();
+	if($('#variantdiv #variantselect').length > 0){
+		$(".shoppingcartbtn").hide();
+		//console.log('bind variant box 2');
+		var colors = new Array();
+		var sizes = new Array();
+		var uniqUrls = new Array();
+		var titles = new Array();
+		$('#variantselect option').each(function(){
+			var color = $(this).attr('data-color');
+			var size = $(this).attr('data-size');
+			var url = $(this).attr('data-imageurl');
+			//var variantid = $(this).attr('data-variantid');
+			
+			if(color!="" && colors.indexOf(color)<0) colors.push(color);
+			if(size!="" && sizes.indexOf(size)<0) sizes.push(size);
+			var variantTitle = $.grep([color,size], Boolean).join("-");
+			if(url!=""){
+				if(uniqUrls.indexOf(url)<0){
+					uniqUrls.push(url);
+					titles.push(variantTitle);
+				}else{
+					var index=uniqUrls.indexOf(url);
+					var tempUrl=titles[index];
+					titles[index] = tempUrl + " / " + variantTitle;
+				}
+				
+			}
+		});
+		
+		if (sizes.length>0) {
+			//fix language issue
+			$('#variantdiv').append('<div class="variant-name">'+Label.size+':</div><div class="variant-value"><select id="variantsize"></select></div>');
+			for (var i=0; i < sizes.length; i++) {
+				$('#variantsize').append("<option value='"+sizes[i]+"'>"+sizes[i]+"</option>");
+			}
+			$(document).on('click change', '#variantsize', checkVariantSelection);
+		}
+		
+		if (colors.length>0) {
+			$('#variantdiv').append('<div class="variant-name">'+Label.color+':</div><div class="variant-value"><select id="variantcolor"></select></div>');
+			for (var i=0; i < colors.length; i++) {
+				$('#variantcolor').append("<option value='"+colors[i]+"'>"+colors[i]+"</option>");
+			}
+			$(document).on('click change', '#variantcolor', checkVariantSelection);
+		}
+		if (uniqUrls.length>0) {
+			var html = "";
+			html += '<div class="product-img-thumb" id="unique-variants" style="margin:20px">';
+			for (var i=0; i < uniqUrls.length; i++)
+				html += "<a class=\"product-variant-thumnail fancybox\" href=\""+uniqUrls[i]+"\" title='"+titles[i]+"' rel=\"product-carousel\"><img style=\"max-width:48px\" title='"+titles[i]+"' src=\""+uniqUrls[i]+"\"></a>";
+			html += "</div><br/>";
+			$('#variantdiv').append(html);
+		}
+		
+		$(".shoppingcartbtn").show();
+		
+		checkVariantSelection();
+		
+	} else {
+		$("#product_deliverytime").show();
+	}
+}
+
+function bindNewsletterSubscription() {
+	if (!window.hasOwnProperty("Comandia") || !Comandia.hasOwnProperty("labelsReady")) return;
+	if (!Comandia.labelsReady()) {
+		setTimeout(bindNewsletterSubscription, 100);
+		return;
+	}
+	var commonSelector = "[data-newsletter-role=$]";
+	var $input = $(commonSelector.replace("$", "input"));
+	var $checkbox = $(commonSelector.replace("$", "checkbox"));
+	var $checkboxLabel = $(commonSelector.replace("$", "checkbox-label"));
+	var $button = $(commonSelector.replace("$", "button"));
+	var canSubmit = true;
+	// use new method if data attr exists
+	if ($input.length > 0) {
+		
+		// is policy required
+		if (Comandia.config.shop.newsletter_is_accept_privacy_policy_required == true) {
+			canSubmit = false;
+			if ($checkbox.length == 0) {
+				throw "Template error: Privacy policy checkbox element is missing (newsletter subscription form).";
+			}
+			$checkbox.prop("required", true);
+			$checkbox.on("change", function(){
+				if ($(this).prop('checked')) {
+					canSubmit = true;
+					$button.prop("disabled", false);
+					if ($button.data("old-title")) {
+						$button.attr("title", $button.data("old-title"));
+					}
+					$checkboxLabel.removeClass("warning-invalid");
+					$checkbox.removeClass("warning-invalid");
+					$("#newsletterPolicyAlert").fadeOut();
+				} else {
+					canSubmit = false;
+					$(this).focus();
+					$button.prop("disabled", true).data("old-title", $button.attr("title")).attr("title", Comandia.getLabel("newsletter.accept.privacy.policy.text"));
+					if ($checkboxLabel.length > 0) {
+						$checkboxLabel.addClass("warning-invalid");
+					} else {
+						$checkbox.addClass("warning-invalid");
+					}
+					
+					if ($input.val()) {
+						if ($("#newsletterPolicyAlert").length == 0) {
+							$input.before('<div class="alert-wrapper" id="newsletterPolicyAlert"><div class="alert alert-danger alert-error alert-dismissable"><button type="button" class="close" data-dismiss="alert">×</button><strong>' + Comandia.getLabel("newsletter.accept.privacy.policy.text") + '</strong></div></div>');
+						}
+						$("#newsletterPolicyAlert").fadeIn();
+					}
+				}
+			});
+			
+		} else if($checkbox.length > 0) {
+			$checkbox.hide();
+			$checkboxLabel.hide();
+		}
+		
+		$button.on("click", function(){
+			$checkbox.trigger("change");
+			if (canSubmit) {
+				$.post('/customer/submitnewslettersubscription',
+						{"email": $input.val(), 'isacceptprivacypolicy': $checkbox.prop('checked') ? 1 : 0},
+					function(data){
+						if ($("#newsletterSubmitAlert").length > 0) {
+							$("#newsletterSubmitAlert").html(data).fadeIn();
+						} else {
+							$input.before('<div class="alert-wrapper" id="newsletterSubmitAlert">'+data+'</div>');
+						}
+						$("#newsletterSubmitAlert").delay(8000).fadeOut();
+					});
+			}
+		});
+		
+		
+	} else {
+		
+		console.error("submitNewsletterSubs call is deprecated.");
+		
+		// deprecated submit method, only available if privacy policy is not required
+		if (Comandia.config.shop.newsletter_is_accept_privacy_policy_required != true) {
+			window.submitNewsletterSubs = function(acceptPolicyFieldId, emailFieldId) {
+				$.post('/customer/submitnewslettersubscription',
+						{'email':$('#'+emailFieldId).val(), 'isacceptprivacypolicy': $('#'+acceptPolicyFieldId).prop('checked')?1:0},
+						function(data){
+							$('#'+emailFieldId).before('<div class="alert-wrapper">'+data+'</div>');
+							$('#'+emailFieldId).siblings('.alert-wrapper').delay(8000).fadeOut();
+						});
+			}
+		}
+	}
+}
+/*
+function bindCookiePolicy() {
+	if($.cookie('acccept.cookie.policy')!=1) {
+		$.get('/jsp/notify.policy.cookie.jsp', function(data) {
+			$('body').append(data);   		 
+		});
+	}
+}*/
+
+function bindLocaleSwitch(){
+	$(document).on('change', '.switch-locale-language', function(){
+		if($(this).val()) 
+			location.href="/localization/setlanguage?localecode="+$(this).val();
+	});
+	$(document).on('change', '.switch-locale-currency', function(){
+		if($(this).val()) 
+			location.href="/localization/setcurrency?currencycode="+$(this).val();
+	});
+}
+
+function bindProductDiscountSelect(){
+	//console.log($('#quantity').length, $('form[action="/cart/add"]').length);
+	if($('form[action="/cart/add"]').length>0 && $('form[action="/cart/add"]').find(':input[name="quantity"]').length==0){
+		var cartform = $('form[action="/cart/add"]');
+		$('<input>').attr({
+		    type: 'hidden',
+		    id: 'quantity',
+		    name: 'quantity',
+		    value: '1'
+		}).appendTo(cartform);
+		
+	}
+	/*
+	if(document.getElementById("variantid")!=null && document.querySelector('[action="/cart/add"]')!=null){//getElementsByAttribute("action","/cart/add")
+		var input = document.createElement('input');
+	    input.type = 'hidden';
+	    input.name = 'quantity';
+	    input.id = 'quantity';
+	    input.value = 1;
+	    document.forms[1].appendChild(input);
+	}*/
+	
+	$('input[type=radio][name=discount]').change(function() {
+		document.getElementById("quantity").value=this.value;
+	 });
+}
+
+function bindFormSubmit(){
+	$('#submitforminpromotion').click(function() {
+		document.querySelector('[action="/cart/add"]').submit();
+	 });
+}
+
+$(window).load(function(){
+	var fbUrl = $('.facebookzone').text();
+	$('.facebookzone').html('<iframe src="//www.facebook.com/plugins/likebox.php\?href='+fbUrl+'&width=300&connections=10&stream=false&header=false&height=240" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:300px;height:240px; background:white;padding:0px;"></iframe>');
+	$('img[srcUrl]').each(function(index) {
+		$(this).attr('src', $(this).attr('srcUrl') );
+	});
+});

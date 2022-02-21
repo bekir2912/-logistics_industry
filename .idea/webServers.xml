@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="7e29fd08-8914-4004-95aa-e116317a7058" name="texnopark" url="http://ftp.u1486707.cp.regruhosting.ru">
+        <fileTransfer host="ftp.u1486707.cp.regruhosting.ru" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+      <webServer id="1c312b98-8f3f-4022-8cb8-f1d4d34104ed" name="industry" url="http://ftp.u1509910.cp.regruhosting.ru">
+        <fileTransfer host="ftp.u1509910.cp.regruhosting.ru" port="21">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -1,0 +1,1063 @@
+let Cart = {};
+$(function(){
+	var activeParent;
+	var parents = [
+			{path: "shippingzonesummary", elementId: "shippingZoneLocked", type:"locked"},
+			{path: "shippingzoneform",  elementId: "shippingZoneForm", type:"form"},
+			{path: "carrierform",  elementId: "carrierFormParent", type:"form"},
+			{path: "carriersummary",  elementId: "carrierLocked", type:"locked"},
+			{path: "paypalexpresscheckoutbutton",  elementId: "paypalexpressParent", type:"locked"},
+			
+			{path: "shippingaddresssummary",  elementId: "shippingAddressLocked", type:"locked"},
+			{path: "shippingaddressform",  elementId: "shippingAddressForm", type:"form"},
+			{path: "shippingaddresslist",  elementId: "shippingAddressList", type:"locked"},
+			{path: "billingaddresssummary",  elementId: "billingAddressLocked", type:"locked"},
+			{path: "billingaddressform",  elementId: "billingAddressForm", type:"form"},
+			{path: "paymentmethodform",  elementId: "paymentBox", type:"form"},
+			{path: "paymentmethodsummary",  elementId: "paymentLocked", type:"locked"},
+			{path: "discountform",  elementId: "discountForm", type:"form"},
+			{path: "discountsummary",  elementId: "discountLocked", type:"locked"}
+			
+		]
+	function getParentByPath(path) {
+		for (var i in parents) {
+			if (parents[i].path == path) {
+				return parents[i];
+			}
+		}
+	}
+	function check() {
+		setCartParentVisibility(false);
+		moveContinueButton();
+		var cartPaths = location.pathname.split("/");
+		if (cartPaths.length > 1 &&  cartPaths[2] == "add") {
+			location.href = "/cart";
+		}
+		
+		$.ajax({
+			url: "/cart/json",
+			method: "get"
+		}).done(function(data){
+			if (data) {
+				
+				if (data.cartProducts.length == 0) {
+					$(".cart-no-product-alert").show();
+					hideAllParents();
+					$("#continueButtonParent").hide();
+					return false;
+				} else {
+					$(".cart-no-product-alert").hide();
+				}
+				
+				$(".shopping-cart-alert").hide();
+				if (data.error) {
+					showAlert(data.error);
+					$("#continueButtonParent").hide();
+					return;
+				}
+				var isShippingZoneSet = data.hasOwnProperty("shippingZone");
+				var isCarrierSet = data.hasOwnProperty("selectedCarrierId");
+				var isBillingAddressSet = data.hasOwnProperty("billingAddress");
+				var isShippingAddressSet = data.hasOwnProperty("shippingAddress");
+				Cart.isLoggedIn = data.hasOwnProperty("shopuser");
+				var isGuest = data.guest ;
+				var isBillingAddressSame = data.isBillingAddressSame;
+				var isPaymentMethodSet = data.hasOwnProperty("paymentMethod");
+				var isSelfPick = data.hasOwnProperty("selfPickStore");
+				var taxId = isBillingAddressSet ? data.billingAddress.properties.taxid : null;
+				var forceShowBillingAddress = isCarrierSet && isShippingAddressSet && ((data.isTaxIdRequired && !taxId) || (!isBillingAddressSame && !isBillingAddressSet) ) ;
+				var readyForPaymentMethod = isShippingZoneSet && isShippingAddressSet && !forceShowBillingAddress && isCarrierSet;
+				var isDiscountSet = data.hasOwnProperty("discount");
+				Cart.showCheckoutStep = readyForPaymentMethod && isPaymentMethodSet;
+				
+				hideAllParents();
+				
+				if (isShippingZoneSet) {
+					loadScreenPart(getParentByPath("shippingzonesummary"));
+				} else {
+					loadScreenPart(getParentByPath("shippingzoneform"));
+				}
+				
+				if (isShippingZoneSet && isCarrierSet) {
+					loadScreenPart(getParentByPath("carriersummary"));
+					loadScreenPart(getParentByPath("paypalexpresscheckoutbutton"));
+					
+				} else if(isShippingZoneSet) {
+					loadScreenPart(getParentByPath("carrierform"));
+				}
+				
+				if (isCarrierSet && ((isSelfPick && Cart.isLoggedIn && !isGuest) || isShippingAddressSet)) {
+					loadScreenPart(getParentByPath("shippingaddresssummary"));
+				} else if (isCarrierSet && !isShippingAddressSet && Cart.isLoggedIn && !isGuest ) {
+					loadScreenPart(getParentByPath("shippingaddresslist"));
+				} else if (isCarrierSet && !isShippingAddressSet) {
+					loadScreenPart(getParentByPath("shippingaddressform"));
+				}
+				
+				if (isCarrierSet && isShippingAddressSet && isBillingAddressSet && !isBillingAddressSame && !forceShowBillingAddress) {
+					loadScreenPart(getParentByPath("billingaddresssummary"));
+				} else if (forceShowBillingAddress || (isShippingAddressSet && !isBillingAddressSame && !isBillingAddressSet)) {
+					loadScreenPart(getParentByPath("billingaddressform"));
+				}
+				
+				if (readyForPaymentMethod && !isPaymentMethodSet) {
+					loadScreenPart(getParentByPath("paymentmethodform"));
+				} else if (readyForPaymentMethod) {
+					loadScreenPart(getParentByPath("paymentmethodsummary"));
+				}
+				
+				if (Cart.showCheckoutStep && isBillingAddressSet) {
+					if (isDiscountSet) {
+						loadScreenPart(getParentByPath("discountsummary"));
+					} else {
+						loadScreenPart(getParentByPath("discountform"));
+					}
+				}
+				
+				if (Cart.showCheckoutStep) {
+					$("#continueButtonParent").hide();
+					$("#checkoutButton").show();
+					
+					if (isBillingAddressSet) {
+						if (isDiscountSet) {
+							loadScreenPart(getParentByPath("discountsummary"));
+						} else {
+							loadScreenPart(getParentByPath("discountform"));
+						}
+					}
+				} else {
+					$("#continueButtonParent").show();
+				}
+				
+				setCartParentVisibility(true);
+			}
+			
+		});
+		
+		$.ajax({
+			url: "/cart/cartsummary",
+			method: "get"
+		}).done(function(data){
+			$(".checkout-right-side").html(data);
+		}).fail(function(e){
+			console.error(e);
+		});
+		
+		$.ajax({
+			url: "/cart/cartsummarymobile",
+			method: "get"
+		}).done(function(data){
+			$(".checkout-mobile-summary").html(data);
+		}).fail(function(e){
+			console.error(e);
+		});
+		
+	}
+	
+	function loadScreenPart(parent) {
+		screenPartLoaded = false;
+		$(".btn-cart-cancel-edit").hide();
+		console.log("load", parent.path)
+		activeParent = parent;
+		var $target = $("#" + parent.elementId);
+		$.ajax({
+			url: "/cart/" + parent.path,
+			method: "get"
+		}).done(function(data){
+			if (data) {
+				$target.html(data).show();
+				
+				// show billing address form by checkbox value
+				if (("shippingaddressform" == parent.path  && !$("#shippingAddressForm #billingaddresssame").prop("checked")) || ("shippingaddresslist" == parent.path && !$("#shippingAddressList #billingaddresssame").prop("checked"))) {
+					loadScreenPart(getParentByPath("billingaddressform"));
+					moveContinueButton();
+				} else {
+					screenPartLoaded = true;
+				}
+				
+			} else {
+				$target.html(data).hide();
+				screenPartLoaded = true;
+			}
+		});
+	}
+	
+	function hideAllParents() {
+		for (var i in parents) {
+			$("#" + parents[i].elementId).hide();
+		}
+	}
+	function hideAllFormParents() {
+		for (var i in parents) {
+			$("#" + parents[i].elementId).hide();
+		}
+	}
+	function hideParent(parentPath) {
+		var parent = getParentByPath(parentPath);
+		if (parent) {
+			$("#" + parent.elementId).hide();
+		}
+		
+	}
+	
+	function moveContinueButton(parent) {
+		if (parent) {
+			$("#continueButtonParent").insertAfter($("#" + parent.elementId)).show();
+		} else {
+			$("#continueButtonParent").insertBefore($("#checkoutButton")).show();
+		}
+	}
+	
+	function showCancelButton() {
+		if (screenPartLoaded) {
+			$(".btn-cart-cancel-edit").show();
+			$("#checkoutButton").hide();
+		} else {
+			setTimeout(showCancelButton, 100);
+		}
+	}
+	
+	function showAlert(message) {
+		scrollTo(0, 0);
+		$(".checkout-template .alert").each(function(){
+			if ($("strong", this).html() == message) {
+				$(this).hide();
+			}
+		});
+		$(".shopping-cart-alert").on("close.bs.alert", function () {
+			$(this).hide();
+			return false;
+		}).fadeIn(300).find("strong").html(message);
+	}
+	
+	function bindPaypalButton() {
+		$.get("/cart/paypalexpresscheckoutbutton", function(data) {
+			$("#paypalbutton").html(data);
+		});
+	}
+	
+	setCartParentVisibility = function(makeVisible) {
+		var $parent = $("#cartParent");
+		$("select, input", $parent).each(function(){
+			if (makeVisible) {
+				$(this).data("onhold", false);
+				$(this).prop("readonly", $(this).data("original-readonly"));
+			} else if ($(this).data("onhold") == "undefined" || !$(this).data("onhold")) {
+				$(this).data("onhold", true);
+				$(this).data("original-readonly", $(this).prop("readonly"));
+				$(this).prop("readonly", true);
+			}
+		});
+		
+		$("button", $parent).each(function(){
+			if (makeVisible) {
+				$(this).data("onhold", false);
+				$(this).prop("disabled", $(this).data("original-disabled"));
+			} else if ($(this).data("onhold") == "undefined" || !$(this).data("onhold")) {
+				$(this).data("onhold", true);
+				$(this).data("original-disabled", $(this).prop("disabled"));
+				$(this).prop("disabled", true);
+			}
+		});
+		$parent.animate({opacity: makeVisible ? 1 : .6}, 200);
+		$(".btn-shopping-cart-checkout", "#checkoutButton").prop("disabled", Cart.isLoggedIn && Cart.showCheckoutStep);
+	}
+	
+	check();
+	bindPaypalButton();
+	
+	
+	/* >>> shipping zone events >>> */
+	$(document).on("click", ".btn-edit-shipping-zone", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("shippingzoneform"));
+		loadScreenPart(getParentByPath("shippingzoneform"));
+		showCancelButton();
+	});
+	$(document).on("change", "[name=shippingZoneType]", function() {
+		var $active = $(this).closest(".item");
+		$active.toggleClass("active");
+		$("select, input[type=text]", $active).prop("disabled", false);
+		var $passive = $active.siblings(".item").first();
+		$passive.toggleClass("active");
+		$("select, input[type=text]", $passive).prop("disabled", true);
+		
+	});
+	
+	function submitShippingZoneForm() {
+		$.ajax({
+			url: "/cart/saveshippingzone",
+			type: "json",
+			method: "POST",
+			data: {countrycode: $(".active .shipping-zone-country")[0].value, postalcode: $(".active .shipping-zone-postal-code")[0].value}
+			
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else {
+				showAlert(data.error);
+			}
+			
+		}).fail(function(e){
+			console.error(e);
+		});
+	}
+	/* <<< shipping zone events <<< */
+
+	
+	/* >>> carrier events */
+	$(document).on("click", ".btn-edit-carrier", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("shippingAddressForm"));
+		loadScreenPart(getParentByPath("carrierform"));
+		showCancelButton();
+	});
+	$('body').on('click', '.carrierselection', function(e){
+		
+		$('#selfpickstorecode').val('');
+		$('#homepaqtoken').val('');
+		
+		var that = this;
+		$(".carrierselection").each(function(){
+			if (that != this) {
+				$(this).prop("checked", false);
+			}
+		});
+		
+		$("#carrierid").val($(this).data("carrier"));
+		$("#isselfpick").val($(this).data("selfpick"));
+		var isSelfPick = $(this).data("selfpick") == "1";
+		var isHomePaq = $(this).data("homepaq") == "1";
+		var isPickupAtShop = $(this).data("is-pickup-at-shop") == "1";
+		if (isSelfPick && !isPickupAtShop) {
+			var postalCode = $(this).data("postalcode");
+			if(postalCode) {
+				$(this).siblings(".offices-search-container").show().load("/cart/searchpickoffice?pickofficepostalcode=" + postalCode);
+			} else if (isHomePaq) {
+				$(this).siblings(".cityPaq-search-container").show();
+			}
+		} else if (!isSelfPick) {
+			$(".offices-search-container").hide();
+			$(".cityPaq-search-container").hide();
+		}
+		
+		
+	});
+	function carrierSubmitEvent() {
+		var $form = $("#carrierForm");
+		
+		if ( $("[data-selfpick=1]:checked").length == 1 && !$("#selfpickstorecode").val() && $("[data-homepaq=1]:checked").length == 0 && $("[data-is-pickup-at-shop=1]:checked").length == 0 && $(".selectpickstore").validationEngine("validate")) {
+			return;
+		} else if ($("[data-homepaq=1]:checked").length == 1) {
+			if ($(".homepaqusername").validationEngine("validate")) {
+				return;
+			} else if ($(".selecthomepaq").length > 0 && $(".selecthomepaq").validationEngine("validate")) {
+			
+				return;
+			} else if (!$('#selfpickstorecode').val()) {
+				$("[name=citypaqterminal]").validationEngine("validate");
+				return;
+			}
+		}
+		
+		if ($("[data-selfpick=1]:checked").length == 1) {
+			$(".cityPaq-search-container").hide();
+		} else if ($("[data-homepaq=1]:checked").length == 1) {
+			$(".offices-search-container").hide();
+		}
+		
+		if ($form.length > 0 && $form[0].carrierid.value && $form.validationEngine("validate")) {
+			$.ajax({
+				url: "/cart/changecarrier",
+				type: "json",
+				method: "POST",
+				data: $form.serialize()
+				
+			}).done(function(data){
+				check();
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+	}
+	
+	// HomePaq events begin
+	$('body').on('click', '.searchpickoffice', function(e){
+		var dataVal = $(this).attr('data-val');
+		var postalCode = $('#'+dataVal).val();
+		var target = $(this).attr('data-target');
+		if(postalCode!='')
+			$('#'+target).load('/cart/searchpickoffice?pickofficepostalcode='+postalCode);
+	});
+	$('body').on('click', '.selectpickstore', function(e){
+		$(".selectpickstore").prop("checked", false);
+		$(this).prop("checked", true);
+		$('#selfpickstorecode').val($(this).val());
+	});
+	$('body').on('click', '.resetcarrier', function(e){
+		$.ajax({
+			url: "/cart/resetcarrier",
+			type: "html",
+			method: "get"
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else if (data.error) {
+				showAlert(data.error);
+			}
+		}).fail(function(e){
+			console.error(e);
+		});
+	});
+	$('body').on('click', '.searchhomepaq', function(e){
+		var dataVal = $(this).attr('data-val');
+		var homepaqusername = $('#'+dataVal).val();
+		var target = $(this).attr('data-target');
+		$('#'+target).html('<img src="'+CDN_SERVER+'/static/admin/img/ajax-loaders/ajax-loader-7.gif'+'"/>');
+		if(homepaqusername!='')
+			$('#'+target).load('/cart/searchhomepaq?homepaqusername='+homepaqusername);
+	});
+	$('body').on('click', '.selecthomepaq', function(e){
+		$('#isselfpick').val('1');
+		var objs = jQuery.parseJSON($(this).val());
+		$('#homepaqtoken').val(objs.token);
+		$('#selfpickstorecode').val(objs.selfpickstorecode);
+	});
+	$(document).on("click", ".btn-show-citypaqs", function(){
+		$(this).closest('.homepaqresultdiv').load('/cart/showcitypaqs');
+	});
+	// HomePaq events end
+	// avoid submit empty carrier form
+	$(document).on("submit", "#carrierForm", function(e) {
+		if (!this.carrierid) return false;
+		if (this.hasOwnProperty("homepaqusername" + this.carrierid.value)) {
+			if (!this["homepaqusername" + this.carrierid]) {
+				return false;
+			}
+		}
+		return true;
+	});
+	$(document).on('click', '.resetcarrier', function(e){
+		$.ajax({
+			url: "/cart/resetcarrier",
+			type: "json",
+			method: "get"
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else if (data.error) {
+				showAlert(data.error);
+			}
+		}).fail(function(e){
+			console.error(e);
+		});
+	});
+	/* <<< carrier events */
+	
+	
+	/* >>> shipping address events */
+	$(document).on("click", ".btn-edit-shipping-address", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("shippingaddressform"));
+		loadScreenPart(getParentByPath("shippingaddressform"));
+		showCancelButton();
+	});
+	$(document).on("click", ".btn-select-shipping-address", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("shippingaddressform"));
+		loadScreenPart(getParentByPath("shippingaddresslist"));
+		showCancelButton();
+	});
+	function shippingAddressSubmitEvent(callback) {
+		var $form = $(".checkout-new-shipping-address-form").first();
+			if ($form.length > 0 && $form.validationEngine("validate")) {
+			$.ajax({
+				url: "/cart/saveshippingaddress",
+				type: "json",
+				method: "POST",
+				data: $form.serialize()
+				
+			}).done(function(data){
+				if (data && data.hasOwnProperty("status") && data.status) {
+					if (callback) {
+						callback();
+					} else {
+						check();
+					}
+				} else if (data.error) {
+					showAlert(data.error);
+				}
+				
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+	}
+	function shippingAddressSelectSubmitEvent(callback) {
+		var $form = $("#cartShippingAddressSelectForm");
+			if ($form.length > 0 && $form.validationEngine("validate")) {
+			$.ajax({
+				url: "/cart/selectshippingaddress",
+				type: "json",
+				method: "POST",
+				data: $form.serialize()
+				
+			}).done(function(data){
+				if (data && data.hasOwnProperty("status") && data.status) {
+					if (callback) {
+						callback();
+					} else {
+						check();
+					}
+				} else if (data.error) {
+					showAlert(data.error);
+					if (data.hasOwnProperty("code") && data.code == "taxid.required") {
+						loadScreenPart(getParentByPath("billingaddressform"));
+						$("#billingaddresssame").prop("checked", false)
+						showCancelButton();
+					}
+				}
+				
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+	}
+	$(document).on("click", ".shipping-address-modal-trigger", function(){
+		var modalId = "shoppingCartAddresFormModal";
+		var url = "/customerzone/shippingaddressmodal?from=shoppingcart";
+		var addressId = $(this).data("addressid");
+		if (addressId) {
+			url += "&addressid=" + addressId;
+		}
+		$.ajax({
+			url: url,
+			method: "POST",
+		}).done(function(data){
+			$("#" + modalId).remove();
+			$(data).appendTo("body");
+			var $modal = $("#ShippingAddressModal").attr("id", modalId);
+			$modal.modal();
+		}).fail(function(e){
+			console.error(e)
+		});
+		
+	});
+	$(document).on("change", "#billingaddresssame", function(){
+		// show/hide billing address form by checkbox value
+		if ($(this).prop("checked")) {
+			$("#billingAddressForm .checkout-new-shipping-address").remove();
+			if ($(".checkout-shipping-address-list").length == 1) {
+				activeParent = getParentByPath("shippingaddresslist");
+			} else {
+				activeParent = getParentByPath("shippingaddressform");
+				$("#shippingAddressFormTaxId").show();
+			}
+		} else {
+			loadScreenPart(getParentByPath("billingaddressform"));
+			$("#shippingAddressFormTaxId").hide();
+			showCancelButton();
+		}
+		moveContinueButton();
+	});
+	
+	$(document).on("submit", "#shoppingCartAddresFormModal form", function(e){
+		var $form = $(this);
+		if (!$form.validationEngine('validate')) return false;
+		$("#shippingAddressModalAlert").remove();
+		var addressId = $form[0].addressid.value;
+		var $modal = $form.closest(".modal");
+		$(document).on("hidden.bs.modal", $modal, function (e) {
+			$modal.remove();
+		});
+		$.ajax({
+			url: "/cart/saveregisteredcustomershippingaddress",
+			method: "POST",
+			data: $form.serialize()
+		}).done(function(data){
+			
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else if (data.error) {
+				showAlert(data.error);
+			}
+			$modal.modal("hide");
+		}).fail(function(e){
+			console.error(e)
+		});
+		
+		
+		return false;
+		
+	});
+	/* <<< shipping address events */
+
+	/* >>> billing address events */
+	$(document).on("click", ".btn-edit-billing-address", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("billingaddressform"));
+		loadScreenPart(getParentByPath("billingaddressform"));
+		showCancelButton();
+	});
+	function billingAddressSubmitEvent(callback) {
+		var $form = $("#billingAddressForm .checkout-new-shipping-address-form").first();
+		if ($form.length > 0 && $form.validationEngine("validate")) {
+			$.ajax({
+				url: "/cart/savebillingaddress",
+				type: "json",
+				method: "POST",
+				data: $form.serialize()
+				
+			}).done(function(data){
+				if (data && data.hasOwnProperty("status") && data.status) {
+					if (callback) {
+						callback();
+					} else {
+						check();
+					}
+				} else if (data.error) {
+					showAlert(data.error);
+				}
+				
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+	}
+	/* <<< billing address events */
+	
+	/* >>> payment method events */
+	$(document).on("click", ".btn-edit-payment-method", function(){
+		hideAllParents();
+		moveContinueButton(getParentByPath("paymentmethodform"));
+		loadScreenPart(getParentByPath("paymentmethodform"));
+		showCancelButton();
+		
+	});
+	/* <<< payment method events */
+	
+	$(".btn-cart-continue").on("click", function(e){
+		if (activeParent) {
+			setCartParentVisibility(false);
+			try {
+				switch (activeParent.path) {
+				
+					case "shippingzoneform":
+						if ($(".shipping-zone-postal-code", "#cartParent .item.active").validationEngine("validate")) {
+							return;
+						} else {
+							submitShippingZoneForm(); 
+						}
+						break;
+					case "carrierform":
+						//check();
+						carrierSubmitEvent();
+						break;
+					case "shippingaddressform":
+						shippingAddressSubmitEvent();
+						break;
+					case "shippingaddresslist":
+						shippingAddressSelectSubmitEvent();
+						break;
+					case "billingaddressform":
+						if ($("#shippingAddressForm .checkout-new-shipping-address").length == 1) {
+							billingAddressSubmitEvent(function() {
+								shippingAddressSubmitEvent();
+							});
+						} else if($("#shippingAddressList .checkout-shipping-address-list").length == 1) {
+							billingAddressSubmitEvent(function() {
+								shippingAddressSelectSubmitEvent();
+							});
+						} else {
+							billingAddressSubmitEvent();
+						}
+						break;
+					case "paymentmethodform":
+						paymentMethodSubmitEvent();
+						break;
+				}
+			}
+			finally {
+				setCartParentVisibility(true);
+			}
+		}
+	});
+	
+	$(".btn-cart-cancel-edit").on("click", function(){
+		check();
+	});
+	
+	
+	$(document).on("click", ".btn-cart-product-customize", function() {
+		var customizationId = $(this).data("customizationid");
+		var productId = $(this).data("productid");
+		var variantId = $(this).data("variantid");
+		var customizationType = $(this).data("customizationtype");
+		var customizationKey = $(this).data("customizationkey");
+		
+		var url = "/cart/";
+		url += (customizationType == "image") ? "customizationuploadmodal" : "customizationmodal";
+		url += "?customizationid=" + customizationId + "&productid=" + productId + "&variantid=" + (variantId == null ? "" : variantId);
+		url += customizationKey ? "&customizationkey=" + customizationKey : "";
+		url += "&screen=cart"
+		$.get(url, function(data,textStatus, xhr) {
+			var $modal = $(data)
+			if(customizationType=="image") {
+				$(document).on("shown.bs.modal", $modal, function (e) {
+					bindUploadProductCustomizationToS3($modal)
+				});
+				$(document).on("hidden.bs.modal", $modal, function (e) {
+					$modal.remove();
+				});
+			}
+			$modal.modal();
+		});
+	});
+	$(document).on("click", ".btn-remove-customization", function(e){
+		e.preventDefault();
+		$.ajax({
+			url: $(this).attr("href"),
+			type: "json",
+			method: "GET"
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else if (data.error) {
+				$(".shopping-cart-alert").show().find("strong").html(data.error);
+			}
+			
+		}).fail(function(e){
+			console.error(e);
+		});
+	});
+	$(document).on("click", ".btn-cart-product-customize-inline", function() {
+		var formData = {};
+		formData.customizationid = $(this).data("customizationid");
+		formData.productid = $(this).data("productid");
+		formData.variantid = !$(this).data("variantid") ? "" : $(this).data("variantid");
+		formData.customizationkey = $(this).data("customizationkey");
+		
+		submitCustomization(formData, $(this).data("customizationtype"), $(this).data("customizationfieldkey"));
+		
+	});
+	
+	submitCustomization = function(formData, customizationType, customizationFieldKey, callback){
+		
+		var url = formData.screen == "customerzone" ? "/customerzone/savecustomization" : "/cart/savecustomization";
+		
+		if (!formData.value && customizationFieldKey) {
+			var $input = $("[name='" +  customizationFieldKey+ "']");
+			if  ($input.attr("type") && ($input.attr("type") == "checkbox" || $input.attr("type") == "radio")) {
+				$input =  $("[name='" +  customizationFieldKey+ "']:checked");
+			}
+			formData.value = $input.val();
+		}
+		
+		$.ajax({
+			url: url,
+			method: "post",
+			data: formData
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				$(".alert").hide();
+				check();
+			} else if (data.error) {
+				$(".shopping-cart-alert").show().find("strong").html(data.error);
+			}
+			
+			if (callback) {
+				callback();
+			}
+			
+			if (formData.screen == "customerzone") {
+				$("#OrderDetailsModal").modal("hide");
+				$(".btn-order-detail[href='/customerzone/orderdetail?orderid=" + formData.orderid + "']").trigger("click");
+				setTimeout(function(){
+					$("#alertCustomerZoneCustomizationSaved").show();
+					setTimeout(function(){
+						$("#alertCustomerZoneCustomizationSaved").hide();
+					}, 8000);
+				}, 800);
+				
+			}
+			
+		}).fail(function(e){
+			console.error(e);
+		});
+	}
+	
+	$(".product-customization-modal").on("submit", "form", function(){
+		if (!$(this).validationEngine("validate")) {
+			return false;
+		}
+	});
+	
+	bindUploadProductCustomizationToS3 = function($modal) {
+		var signedUrl, objectKey, file, $progress = $("#progressBar"), screen;
+		$("#productCustomizationUploadButton").hide();
+		$("#productCustomizationUploadFile", $modal).on("change", function(e){
+			e.stopPropagation();
+			
+			$("#fileTypeError").hide();
+			$("#fileSizeError").hide();
+			
+			file = this.files[0];
+			screen =  this.form.screen.value;
+			
+			if(!file.type || !(file.type.indexOf("image") >= 0 || file.type.indexOf("pdf") >= 0 )) {
+				$("#fileTypeError").fadeTo(8000, 500);
+				$(this).val("");
+				return false;
+			}
+			
+			if(!file.size || !(file.size > 0 && file.size <= 16 * 1024 * 1000)) {
+				$("#fileSizeError").fadeTo(8000, 500);
+				$(this).val("");
+				return false;
+			}
+			
+			// request signed url
+			$.ajax({
+				url: "/cart/requestsignedurlforcustomization",
+				data: {filename: file.name},
+				success: function(json) { 
+					signedUrl = json.signedurl;
+					objectKey = json.objectkey;
+					$("#productCustomizationUploadButton").show();
+				}
+			});
+		});
+		
+		$($modal).on("click", "#productCustomizationUploadButton", function(e){
+			e.stopPropagation();
+			var $button = $(this);
+			$button.hide();
+			var $btnModalClose = $('[data-dismiss="modal"]');
+			$btnModalClose.hide();
+			$modal.find('.modal-body form').hide();
+			$progress.show();
+			
+			$.ajax({
+				type : 'PUT',
+				url : signedUrl,
+				data : file,
+				processData : false, // tell jQuery not to convert to form data
+				contentType : file.type,
+				xhr : function() {
+					var xhr = $.ajaxSettings.xhr();
+					if (xhr.upload) {
+						xhr.upload.addEventListener("progress", progressListener, false);
+					}
+					return xhr;
+				},
+				success: function() {
+					submitCustomizationFile(objectKey);
+				},
+				error: function (XMLHttpRequest, textStatus, errorThrown) {
+					console.log('Upload error: ' + XMLHttpRequest.responseText,textStatus);
+					$modal.find('.modal-body form').show();
+					$button.show();
+					$btnModalClose.show();
+					$progress.hide();
+				}
+			});
+		});
+		
+		function progressListener(e) {
+			if(e.lengthComputable) {
+				var max = e.total;
+				var current = e.loaded;
+				var percentage = (current * 100) / max;
+				$('.progress-bar', $progress).attr('aria-valuenow', percentage).css("width", percentage + '%').text(Math.floor(percentage) + '%');
+			}
+		}
+		
+		function submitCustomizationFile(objectKey) {
+			var callback = function() {
+				$modal.modal("hide").on('hidden.bs.modal', function (e) {
+					$modal.remove();
+				});
+			}
+			
+			var form  = document.getElementById("productCustomizationUploadForm");
+			
+			var formData = {};
+			
+			$("input[type=hidden]", form).each(function(){
+				formData[this.id] = this.value;
+			});
+			formData.value = objectKey;
+			submitCustomization(formData, "image", null, callback);
+		}
+	}
+	
+	$(document).on("submit", ".shopping-cart-discount-form", function (e){
+		e.preventDefault();
+		$(".alert-invalid-discount-code").hide();
+		var discountCode = $('[name="discountcode"]', this).val();
+		var email = $('[name="customerBillingEmail"]', this).val();
+		if (discountCode) {
+			$.ajax({
+				url: "/cart/applydiscountcoupon",
+				type: "html",
+				method: "POST",
+				data: {'discountcouponcode':discountCode,'email':email}
+				
+			}).done(function(data){
+				if (data && data.hasOwnProperty("status") && data.status) {
+					check();
+				} else if (data.error) {
+					$(".alert-invalid-discount-code").show().find("strong").html(data.error);
+				}
+				
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+	});
+	
+	$(document).on("click", ".btn-update-cart-item-quantity", function() {
+		var $input = $($(this).data("input-selector"));
+		var operator = parseInt($(this).val());
+		var productId = $input.data("productid");
+		var variantId = $input.data("variantid");
+		var customizationKey = $input.data("customizationkey");
+		var currentQty = parseInt($input.val());
+		var newQty = 0;
+		
+		if (operator != 0) {
+			newQty = currentQty + operator;
+		}
+		
+		if (newQty >= 0 && newQty <= 100) {
+			$.ajax({
+				url: "/cart/update",
+				type: "html",
+				method: "POST",
+				data: {productid: productId, variantid: variantId, quantity: newQty, customizationkey: customizationKey}
+				
+			}).done(function(data){
+				if (data && data.hasOwnProperty("status") && data.status) {
+					check();
+				} else if (data.error) {
+					showAlert(data.error);
+				}
+			}).fail(function(e){
+				console.error(e);
+			});
+		}
+		
+	});
+	
+	function paymentMethodSubmitEvent() {
+		var paymentMethodCode = $("[name=paymentmethodcode]:checked").val();
+		$.ajax({
+			url: "/cart/setpaymentmethod",
+			type: "json",
+			method: "POST",
+			data: {paymentmethodcode: paymentMethodCode}
+		}).done(function(data){
+			if (data && data.hasOwnProperty("status") && data.status) {
+				check();
+			} else if (data.error) {
+				showAlert(data.error);
+			}
+			
+		}).fail(function(e){
+			console.error(e);
+		});
+	}
+	
+	$(document).on("click", ".btn-shopping-cart-checkout", function(){
+		if ($("#accept_dpp[type=checkbox]").is(":checked") || !Cart.isLoggedIn) {
+			setCartParentVisibility(false);
+			$('<form>', {
+				"id": "shoppingCartCheckout",
+				"html": '<input type="text" id="isacceptmarketing" name="isacceptmarketing" value="' + ($("#isacceptmarketing").is(":checked") ? "YES" : "NO") + '" />'
+						+ '<input type="text" id="accept_dpp" name="accept_dpp" value="YES" />',
+				"action": "/cart/checkout",
+				"method": "POST"
+			}).appendTo(document.body).hide().submit();
+			
+		} else {
+			$(window).scrollTop($("#accept_dpp").position().top);
+			$("#accept_dpp").validationEngine("validate");
+		}
+		
+		
+	});
+	
+	$(document).on("change", "#checkoutButton #accept_dpp", function(){
+		$(".btn-shopping-cart-checkout").prop("disabled", !$(this).is(":checked"));
+	});
+	
+	
+	
+/*	$(document).on("click", ".btn-duplicate-cart-product", function(){
+		var data = {productid : $(this).data("productid"), variantid: $(this).data("variantid"), quantity: 1};
+		$.ajax({ 
+			url: "/cart/addsilencecart",
+			method: "post",
+			data: data,
+		}).done(function(data) {
+			if (data.hasaerror) {
+				showAlert(data.hasaerror);
+			}
+		}).success(function(){
+			check();
+		});
+		
+	})
+	*/
+	$(document).on("click", "#show-summary-details", function(){
+		$('.checkout-summary').removeClass("d-none");
+		$('.summary-checkout').hide();
+		$('#hide-summary').show();
+		$(this).hide();
+	});
+	$(document).on("click", "#hide-summary", function(){
+		$('.checkout-summary').addClass("d-none");
+		$('.summary-checkout').show();
+		$('#hide-summary').hide();
+		$('#show-summary-details').show();
+	});
+	
+	$(document).on("change", ".btn-apply-same-customization", function(){
+		var productId = $(this).data("productid");
+		var variantId = $(this).data("variantid");
+		var customizationKey = $(this).data("customizationkey");
+		var amount = parseInt($(this).data("amount"));
+		
+		if (!$(this).prop("checked")) {
+			// duplicate cart item
+			var data = {productid : productId, variantid: variantId, quantity: amount - 1};
+			$.ajax({ 
+				url: "/cart/addsilencecart",
+				method: "post",
+				data: data,
+			}).done(function(data) {
+				if (data.hasaerror) {
+					showAlert(data.hasaerror);
+				}
+			}).success(function(){
+				
+				$.ajax({
+					url: "/cart/update",
+					type: "html",
+					method: "POST",
+					data: {productid: productId, variantid: variantId, quantity: 1, customizationkey: customizationKey}
+					
+				}).done(function(data2){
+					if (data2 && data2.hasOwnProperty("status") && data2.status) {
+						check();
+					} else if (data2.error) {
+						showAlert(data2.error);
+					}
+				}).fail(function(e){
+					console.error(e);
+				});
+				
+			});
+		}
+	});
+});

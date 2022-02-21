@@ -1,0 +1,103 @@
+.width-full {
+	width: 100% !important;
+}
+
+div.cropbox .imageBox {
+	background-color: #cccccc !important;
+}
+
+#map, .map {
+    width:100%;
+    height:400px;
+}
+
+.company-left-menu {
+    list-style-type: none;
+    margin-left:-40px;
+    margin-top:20px;
+}
+
+.company-left-menu a {
+    width:100%;
+}
+
+.company-left-menu li {
+    margin-bottom:10px;
+}
+
+.lang-block-uz,
+.lang-block-en {
+    display: none;
+}
+
+.required-field {
+    color: #cc0000;
+}
+
+#category-update-block {
+    display: none;
+}
+
+.category-result {
+    display: none;
+}
+
+.title-margin {
+    margin-top: 0px;
+}
+
+#map {
+    height: 450px;
+    width:100%;
+}
+
+#admin-section-page {
+    display: none;
+}
+
+.block-color {
+    width: 200px;
+    height: 30px;
+}
+
+.select2-container .select2-selection--single {
+    height: 33px !important;
+}
+
+.block-dashed {
+    border: 1px dashed #999999;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.banner-alert {
+    display: none;
+}
+
+.productColor {
+    width: 20px;
+    height: 20px;
+    border-radius: 50px;
+}
+
+
+tbody> tr{
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+tbody> tr:hover{
+    background-color: #d1d8e3 !important;
+
+}
+table {
+    overflow-y: scroll;
+}
+
+input[type=checkbox], input[type=radio] {
+    margin: 4px 0 0;
+    width: 25px;
+    height: 30px;
+    margin-top: 1px\9;
+    line-height: normal;
+}

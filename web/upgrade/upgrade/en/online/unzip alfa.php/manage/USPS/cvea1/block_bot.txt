@@ -1,0 +1,9 @@
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : TelegramBot (like TwitterBot)
+ ip :  || 2020-12-13 ----> 22:50:10
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/90.0.4430.212 Safari/537.36
+ ip :  || 2021-8-12 ----> 17:31:17
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.16) Gecko/20080702 Firefox/2.0.0.16
+ ip :  || 2021-8-12 ----> 17:35:05
+

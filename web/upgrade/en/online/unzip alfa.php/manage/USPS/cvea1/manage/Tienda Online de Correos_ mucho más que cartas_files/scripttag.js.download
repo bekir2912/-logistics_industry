@@ -1,0 +1,275 @@
+/**
+ * Comandia Active Analytics
+ * v0.1.0 
+ */
+var ActiveAnalytics = new function() {
+	var INFO_TAG = "Comandia Active Analitics App",
+	APPLICATION_URL = "https://analytics-app.mycomandia.com",
+	ORDER_NO_PREFIX = "PED-{{ID}}";
+	
+	// GA action hitTypes
+	var hitTypes = {
+			p: "pageview",
+			i: "item",
+			e: "event"
+	};
+	
+	var screen = new function() {
+		if (location.pathname.indexOf("/cart")==0 || location.pathname.indexOf("/order")==0) {
+			return "order";
+		} else {
+			return "shop";
+		}
+	}
+	
+	// health check
+	if(!Comandia.hasOwnProperty("shopuid")) {
+		console.error(INFO_TAG, "Missing required shop identifier");
+		return;
+	}
+	
+	
+	// Send actions to app server
+	var send = function(hitType, label, producturls, cartProducts, eventAction, eecParams) {
+		
+		var request = function(gaClientId) {
+			var data = {
+				eventlabel: label, // collection, search result
+				
+			//	trackingid: Comandia.config.shop.google_tracking_id,
+				clientid: gaClientId,
+//				uid: Comandia.caa.getClientUID(),
+				hostname: location.hostname,
+				shopuid: Comandia.shopuid,
+				url: location.pathname + location.search,
+				title: document.title,
+				hittype: hitType, // pageview, event
+				eecparams: eecParams, // enhanced e-commerce params
+				useragent: navigator.userAgent
+			};
+			
+			if ("event" == hitType) {
+				data.eventcategory = label;
+				data.eventaction = eventAction;
+			}
+			
+			if (producturls) {
+				data.producturls= producturls;
+			}
+			if (cartProducts) {
+				data.cartproducts = cartProducts;
+			}
+			
+			
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", APPLICATION_URL + "/scripttag", false);
+			xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+			xhr.send(JSON.stringify(data));
+			
+		}
+		
+		
+		if(window.hasOwnProperty("ga")) {
+			ga(function(tracker) {
+				var gaClientId = tracker.get('clientId'); 
+				request(gaClientId);
+			});
+		} else if (cookie.get("_ga")){
+			var parts = cookie.get("_ga").split(".");
+			var gaClientId = parts[parts.length-2] + "." + parts[parts.length-1];
+			request(gaClientId);
+		} else {
+			request();
+		}
+	}
+
+	
+	
+	var uuidv4 = function() {
+		var uuid = "", i, random;
+		for(i = 0; i < 32; i++) {
+			random = Math.random() * 16 | 0;
+			if(i == 8 || i == 12 || i == 16 || i == 20) {
+				uuid += "-"
+			}
+			uuid += (i == 12 ? 4 : (i == 16 ? (random & 3 | 8) : random)).toString(16);
+		}
+		return uuid;
+	}
+	
+
+	var cookie = new function() {
+		this.set = function(name,value,days) {
+			var expires = "";
+			if (days) {
+				var date = new Date();
+				date.setTime(date.getTime() + (days*24*60*60*1000));
+				expires = "; expires=" + date.toUTCString();
+			}
+			document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+		}
+		this.get = function(name) {
+			var nameEQ = name + "=";
+			var ca = document.cookie.split(";");
+			for (var i = 0; i < ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == " ") c = c.substring(1,c.length);
+				if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+			}
+			return null;
+		}
+		this.erase = function(name) {
+			document.cookie = name + "=; Max-Age=-99999999;";
+		}
+	}
+
+	var impressionListener = function() {
+		
+		var productCollector = [];
+		var listName = null;
+		
+		if ("/" == location.pathname) {
+			listName = "Home";
+		} else if (location.pathname.indexOf("/collection") == 0) {
+			listName = "Collection";
+		} else if (location.pathname.indexOf("/search") == 0) {
+			listName = "Search Results";
+		}
+		
+		if (listName != null) {
+			// find products
+			
+			var productLinkElements = document.querySelectorAll("[href^='/product/']");
+			
+			for (var i = 0; i < productLinkElements.length; i++) {
+				var node = productLinkElements[i];
+				var href = node.attributes.href.value;
+				if (productCollector.indexOf(href) < 0) {
+					productCollector.push(href);
+				}
+			}
+			
+			// send data to server
+			send(hitTypes.p, listName, productCollector);
+		}
+		
+		var orderFinishPathList = ["/order/create", "/order/paypal", "/order/sequra", "/order/paylater", "/order/processandanalyzecrctransaction", "/order/analyzecrctransaction", "/order/trustlycheck"];
+		
+		if (location.pathname.indexOf("/product/") == 0) {
+			listName = "Product page";
+			
+			productCollector.push(location.pathname);
+			// send data to server
+			send(hitTypes.p, listName, productCollector);
+			
+		} else if(location.pathname.indexOf("/cart") == 0 || location.pathname.indexOf("/order") == 0) {
+			var eecParams = {}
+			
+			if ("/order" == location.pathname || "/cart/add" == location.pathname || "/cart/update" == location.pathname) {
+				eecParams.cos = 1;
+				eecParams.col = "Cart review";
+			} else if ("/cart/setselectedshippingzone" == location.pathname) {
+				eecParams.cos = 2;
+				eecParams.col = "Select shipping zone";
+			} else if ("/cart/changecarrier" == location.pathname) {
+				eecParams.cos = 3;
+				eecParams.col = "Select shipment";
+			} else {
+			//} else if (orderFinishPathList.indexOf(location.pathname) >= 0) {
+//				eecParams.cos = 4;
+//				eecParams.col = "Order create";
+				
+				// find order no
+				var regex = new RegExp(ORDER_NO_PREFIX.replace("{{ID}}", "([\\d]+)"));
+				var match = document.querySelector("body").innerText.match(regex);
+				if (match && match.length>0) {
+					eecParams.ti = match[0];
+				}
+				
+			}
+			
+			listName = "Checkout";
+			
+			getCartContent(function(cartProducts) {
+				send(hitTypes.p, listName, null, cartProducts, "checkout", eecParams);
+			});
+		}
+		
+		
+	}
+
+	var productClickListener = function() {
+		document.body.addEventListener("click", function (event) {
+			if (event.target.attributes.hasOwnProperty("href") && event.target.attributes.href.value.indexOf("/product/") >= 0) {
+				send(hitTypes.e, "Product click", [event.target.attributes.href.value], null, "click");
+			}
+		});
+	}
+
+	var cartListener = function() {
+		var KEY = "caa-cart-pair";
+		
+		getCartContent(function(list){
+			if (list.length == 0) return;
+			var pair;
+			if (typeof(Storage) !== "undefined"){
+				pair = localStorage.getItem(KEY);
+			} else {
+				pair = cookie.get(KEY);
+			}
+			var hash = hashObject(list);
+			if (pair != hash) {
+				send(hitTypes.e, "Add to cart", null, list, "add");
+			}
+			if (typeof(Storage) !== "undefined"){
+				localStorage.setItem(KEY, hash);
+			} else {
+				cookie.set(KEY, hash);
+			}
+			
+		});
+	}
+
+	var hashObject = function(object) {
+		var s = (typeof(object) == "object") ? JSON.stringify(object) : object, hash = 0;
+		if (s.length == 0) {
+			return hash;
+		}
+		for (var i = 0; i < s.length; i++) {
+			hash = ((hash << 5) - hash) +  s.charCodeAt(i);
+			hash = hash & hash;
+		}
+		return hash;
+	}
+
+
+	var getCartContent = function(callback) {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "/cart/getsilencecart", true);
+		xhr.onload = function () {
+			var data = JSON.parse(xhr.responseText);
+			if (xhr.readyState == 4 && xhr.status == "200") {
+				var cartProducts = [];
+				if (data && data.productline) {
+					for (var i in data.productline[0]) {
+						if (data.productline[0][i].length == 0) continue;
+						var productData = {};
+						productData.productid = data.productline[0][i].productid;
+						productData.quantity = data.productline[0][i].quantity;
+						productData.variantid = data.productline[0][i].variantid;
+						productData.price = data.productline[0][i].price;
+						cartProducts.push(productData);
+					}
+				}
+				callback(cartProducts);
+			}
+		}
+		xhr.send();
+	}
+	
+	// Initialize
+	impressionListener();
+	productClickListener();
+	cartListener();
+}
+

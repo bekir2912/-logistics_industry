@@ -1,0 +1,81 @@
+[06:29:07am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[05:58:08am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:00:45am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[06:11:45am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[06:14:34am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[06:28:16am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:28:52am -  -  - Handheld Browser - iPad] Mengunjungi Scampage
+[06:29:27am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[06:41:14am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[06:44:06am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[06:58:40am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[07:07:16am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[07:08:44am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[07:18:12am -  -  - Firefox - Windows 10] Mengunjungi Scampage
+[07:28:15am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[07:36:31am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[07:42:28am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[07:48:12am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[07:53:31am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[08:10:01am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[09:16:33am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[09:35:53am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[09:41:33am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[10:42:16am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[11:01:40am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[12:00:06pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[12:33:50pm -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[01:00:09pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[01:29:46pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[02:30:45pm -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[02:50:59pm -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[02:58:21pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[06:03:25pm -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[07:32:14pm -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[08:06:09pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[10:15:03pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[10:45:45pm -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[10:52:34pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[11:19:44pm -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[11:45:05pm -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[12:10:52am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[12:49:07am -  -  - Safari - Mac OS X] Mengunjungi Scampage
+[01:01:17am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[01:14:19am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[01:53:41am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[02:54:56am -  -  - Chrome - Android] Mengunjungi Scampage
+[03:14:51am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[03:51:27am -  -  - Handheld Browser - Android] Mengunjungi Scampage
+[06:26:53am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[07:16:05am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[09:16:26am -  -  - Chrome - Windows 8.1] Mengunjungi Scampage
+[09:19:50am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[10:06:17am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[12:58:53pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[04:39:41am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[04:44:09am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[04:54:47am -  -  - Firefox - Windows 7] Mengunjungi Scampage
+[05:42:40am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[05:52:45am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:04:37am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:15:30am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:16:09am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[10:27:55pm -  -  - Firefox - Windows 7] Mengunjungi Scampage
+[10:33:17pm -  -  - Firefox - Windows 7] Mengunjungi Scampage
+[10:35:49pm -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[10:47:57pm -  -  - Firefox - Windows 7] Mengunjungi Scampage
+[11:06:13pm -  -  - Firefox - Windows 7] Mengunjungi Scampage
+[11:07:46pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[11:13:05pm -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[11:27:49pm -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[12:04:30am -  -  - Firefox - Windows 8.1] Mengunjungi Scampage
+[12:05:12am -  -  - Firefox - Windows 10] Mengunjungi Scampage
+[12:31:08am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[12:41:52am -  -  - Chrome - Windows 7] Mengunjungi Scampage
+[12:42:57am -  -  - Firefox - Windows Vista] Mengunjungi Scampage
+[12:45:34am -  -  - Handheld Browser - iPhone] Mengunjungi Scampage
+[01:21:00am -  -  - Chrome - Windows 7] Mengunjungi Scampage
+[01:21:03am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[05:26:57am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[06:18:18am -  -  - Chrome - Windows 10] Mengunjungi Scampage
+[08:58:16pm -  -  - Chrome - Windows 7] Mengunjungi Scampage

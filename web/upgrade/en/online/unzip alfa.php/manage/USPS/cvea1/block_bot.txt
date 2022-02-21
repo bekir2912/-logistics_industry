@@ -1,0 +1,42 @@
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : TelegramBot (like TwitterBot)
+ ip :  || 2020-12-13 ----> 22:50:10
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-14 ----> 05:41:57
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : 
+ ip :  || 2020-12-14 ----> 07:29:38
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : 
+ ip :  || 2020-12-14 ----> 11:10:03
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : 
+ ip :  || 2020-12-14 ----> 12:33:10
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-14 ----> 17:23:14
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-14 ----> 20:03:44
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-15 ----> 02:07:28
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 5.1; rv:52.0) Gecko/20100101 Firefox/52.0
+ ip :  || 2020-12-15 ----> 12:46:50
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-15 ----> 16:42:19
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-15 ----> 16:42:48
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-16 ----> 04:05:52
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-16 ----> 11:35:12
+
+ BLOCKED GOOGLE SAFEBROWSING || user-agent : Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko
+ ip :  || 2020-12-16 ----> 12:16:22
+
