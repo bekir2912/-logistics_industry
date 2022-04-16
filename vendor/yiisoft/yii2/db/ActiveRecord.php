@@ -422,7 +422,7 @@ class ActiveRecord extends BaseActiveRecord
     {
         return '{{%' . Inflector::camel2id(StringHelper::basename(get_called_class()), '_') . '}}';
     }
-
+ 
     /**
      * Returns the schema information of the DB table associated with this AR class.
      * @return TableSchema the schema information of the DB table associated with this AR class.
